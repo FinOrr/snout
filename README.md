@@ -12,26 +12,6 @@
 
 ## Overview
 
-The Snout Ledger is an RFID-tracking, blockchain database: a decentralised system written in Rust that integrates local veterinary RFID data into a national Solana blockchain. 
-The goal is to streamline the tracking and identification of pets, preventing euthanasia through timely collaboration with registered veterinarians.
+The Snout Ledger is an RFID-tracking, blockchain database: a decentralised system written that integrates local veterinary RFID data into a national blockchain. 
 
-This project was built for the [Encode x Solana Hackathon, 2024](https://www.encode.club/encodesolanahack) and as an excuse for me to learn Rust.
-
-## Features
-
-- **Decentralised Tracking:** Utilise Solana blockchain for secure and decentralised storage of RFID data.
-  
-- **Efficient Identification:** Streamline the tracking and identification of pets to prevent unnecessary euthanasia.
-
-- **Rust Implementation:** Built in Rust, ensuring efficiency, safety, and performance.
-
-## Getting Started
-
-### Installation
-
-To build the Snout Ledger, follow these steps:
-
-```bash
-git clone https://github.com/FinOrr/snout-ledger.git
-cd snout-ledger
-cargo build --release
+The goal is to streamline the tracking and identification of pets, preventing euthanasia through rapid communication with with registered veterinarians.
