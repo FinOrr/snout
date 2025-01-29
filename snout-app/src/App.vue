@@ -7,42 +7,54 @@ const error = ref('')
 const loading = ref(false)
 const showResults = ref(false)
 const lookupData = ref({})
-const showHelp = ref(false) // New reactive property for toggling help section
+const showHelp = ref(false)
+const resultsRef = ref(null)
 
-// Add computed property for cleaned code
-const cleanedCode = computed(() => code.value.replace(/\s/g, ''))
+// Simplified validation logic
+const isValidCode = computed(() => {
+  const cleaned = code.value.replace(/\s/g, '')
+  return cleaned.length === 19 && /^\d{19}$/.test(cleaned)
+})
 
-// Update validation functions
-const validateLength = (value: string) => {
-  const cleaned = value.replace(/\s/g, '')
-  return cleaned.length === 19 || 'Code must be exactly 19 digits'
+// Remove individual validation functions and use computed property
+const validateCode = () => {
+  const cleaned = code.value.replace(/\s/g, '')
+  if (cleaned.length !== 19) return 'Please enter all 19 digits'
+  if (!/^\d+$/.test(cleaned)) return 'Numbers only please'
+  return true
 }
 
-const validateDigits = (value: string) => {
-  const cleaned = value.replace(/\s/g, '')
-  return /^\d{19}$/.test(cleaned) || 'Code must contain only digits'
-}
-
-// Updated submitCode function to handle spaces in validation
+// Updated submit handler
 const submitCode = async () => {
-  const cleanCode = code.value.replace(/\s/g, '') // Remove spaces before validation
-  if (!isValid.value || !/^\d{19}$/.test(cleanCode)) {
-    error.value = 'Please enter a valid 19-digit numerical code.'
-    return
-  }
+  if (!isValidCode.value) return
   loading.value = true
   error.value = ''
   try {
-    // Perform lookup (replace with actual lookup logic)
-    // Example:
-    // const response = await fetch(`/api/lookup?code=${code.value}`)
-    // lookupData.value = await response.json()
-    // Simulating lookup
+    // Simulating lookup with more realistic data
     setTimeout(() => {
-      lookupData.value = { code: code.value, detail: 'Sample Detail Information' }
+      lookupData.value = {
+        clinicName: 'Example Veterinary',
+        address: '100 Street Name, Town, County, Post Code',
+        phone: '0118-999-881-999-119-725-3',
+        email: 'contact@examplevets.com',
+        hours: 'Open 24/7 for Emergencies',
+        lastScan: '2024-01-15 14:30 PST',
+        location: {
+          lat: 38.5816,
+          lng: -121.4944
+        }
+      }
       showResults.value = true
       loading.value = false
-    }, 2000)
+      
+      // Smooth scroll after results are shown
+      setTimeout(() => {
+        resultsRef.value?.$el.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        })
+      }, 100)
+    }, 1500)
   } catch (err) {
     error.value = 'Lookup failed. Please try again.'
     loading.value = false
@@ -61,156 +73,243 @@ watch(code, (newValue) => {
 
 <template>
   <v-app>
-    <v-main>
-      <v-container class="d-flex flex-column align-center py-8" fluid>
-        <!-- Page Title -->
-        <h1 class="text-h3 mb-2">Lost Pet Finder</h1>
-        <p class="text-subtitle-1 text-center mx-auto mb-4">
-          Enter the 19-digit RFID code to find your pet’s veterinary practice
-        </p>
+    <v-main class="bg-grey-lighten-4">
+      <v-container fluid>
+        <div class="d-flex flex-column align-center py-8 gap-6">
+          <!-- Main Search Card -->
+          <v-card
+            max-width="700"
+            min-width="600"
+            class="mx-auto elevation-3 rounded-lg position-relative overflow-hidden"
+          >
+            <!-- Decorative top border -->
+            <div class="gradient-border"></div>
 
-        <!-- Main Card -->
-        <v-card max-width="600" class="w-100 pa-4">
-          <v-card-title class="pb-0">RFID Scanner</v-card-title>
-          <v-card-subtitle>Enter the 19-digit microchip code below</v-card-subtitle>
-          <v-card-text>
-            <v-form ref="form" v-model="isValid" @submit.prevent="submitCode" class="mb-4">
-              <v-text-field
-                v-model="code"
-                label="RFID Code"
-                :rules="[validateLength, validateDigits]"
-                placeholder="0000 0000 0000 0000 000"
-                required
-                maxlength="23"
-                class="mb-3"
-              >
-              </v-text-field>
-
-              <!-- Error Alert -->
-              <v-alert
-                v-if="error"
-                type="error"
-                dismissible
-                class="mb-4"
-                @dismissed="error = ''"
-              >
-                {{ error }}
-              </v-alert>
-
-              <v-btn
-                :disabled="!isValid || loading"
-                color="primary"
-                type="submit"
-                class="submit-button"
-              >
-                <div class="d-flex align-center">
-                  <span class="button-text" v-if="!loading">Find Veterinary Practice</span>
-                  <v-progress-circular
-                    v-else
-                    indeterminate
-                    size="20"
-                    color="white"
-                  ></v-progress-circular>
-                  <!-- Arrow Icon for Hover -->
-                  <v-icon class="arrow-icon ms-2">mdi-arrow-right</v-icon>
-                </div>
-              </v-btn>
-            </v-form>
-
-            <!-- Results Dialog Triggered on showResults -->
-            <v-dialog v-model="showResults" transition="fade-transition" max-width="600px">
+            <!-- Help Dialog -->
+            <v-dialog v-model="showHelp" max-width="400">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  icon
+                  variant="text"
+                  v-bind="props"
+                  class="position-absolute right-2 top-2 help-button"
+                  size="small"
+                >
+                  <v-icon>mdi-help-circle-outline</v-icon>
+                </v-btn>
+              </template>
               <v-card>
-                <v-card-title>
-                  <v-icon left color="green">mdi-check</v-icon>
-                  Veterinary Practice Found
-                </v-card-title>
+                <v-card-title class="text-h6"> Need help finding the RFID code? </v-card-title>
                 <v-card-text>
-                  {{ lookupData }}
+                  The RFID code can be scanned using a microchip reader at any veterinary clinic or
+                  animal shelter. If you've found a lost pet, you can take them to the nearest vet or
+                  shelter to have their chip scanned.
                 </v-card-text>
                 <v-card-actions>
                   <v-spacer></v-spacer>
-                  <v-btn color="blue darken-1" text @click="showResults = false">Close</v-btn>
+                  <v-btn color="primary" variant="text" @click="showHelp = false">Got it</v-btn>
                 </v-card-actions>
               </v-card>
             </v-dialog>
-          </v-card-text>
-        </v-card>
 
-        <!-- Toggleable Help Section -->
-        <v-btn text color="blue" class="mt-4" @click="showHelp = !showHelp">
-          Need help?
-        <v-icon right>mdi-chevron-down</v-icon>
-        </v-btn>
+            <v-card-text class="pa-8">
+              <h2 class="text-h4 mb-2 text-center font-weight-bold">🐾 Microchip Lookup</h2>
+              <p class="text-subtitle-1 text-center text-grey-darken-1 mb-6">
+                Find a pet's veterinary clinic using their microchip number
+              </p>
 
-        <v-collapse v-if="showHelp" class="help-section">
-          <v-card color="blue-lighten-4" class="pa-4" max-width="600">
-            <v-card-title class="text-h6">Need help finding the RFID code?</v-card-title>
-            <v-card-text class="text-body-1">
-              The RFID code can be scanned using a microchip reader at any veterinary clinic or animal shelter.
-              If you’ve found a lost pet, you can take them to the nearest vet or shelter to have their chip scanned.
+              <v-form @submit.prevent="submitCode">
+                <v-text-field
+                  v-model="code"
+                  :rules="[validateCode]"
+                  placeholder="Enter 19-digit microchip number"
+                  variant="outlined"
+                  :error-messages="error"
+                  class="mb-6 search-input"
+                  maxlength="23"
+                  density="comfortable"
+                  bg-color="white"
+                  height="64"
+                  :style="{ fontSize: '1.25rem' }"
+                ></v-text-field>
+
+                <v-btn
+                  block
+                  color="primary"
+                  size="x-large"
+                  type="submit"
+                  :loading="loading"
+                  :disabled="!isValidCode"
+                  class="search-button"
+                  height="56"
+                  elevation="2"
+                >
+                  <template v-slot:loader>
+                    <v-progress-circular indeterminate color="white"></v-progress-circular>
+                  </template>
+                  <div class="d-flex align-center justify-center w-100">
+                    <span class="search-text">Find Veterinary Clinic</span>
+                    <v-icon class="search-icon ms-3" size="large">mdi-magnify</v-icon>
+                  </div>
+                </v-btn>
+              </v-form>
             </v-card-text>
           </v-card>
-        </v-collapse>
+
+          <!-- Results Card -->
+          <v-expand-transition>
+            <v-card
+              v-if="showResults"
+              ref="resultsRef"
+              max-width="700"
+              min-width="600"
+              class="mx-auto elevation-3 rounded-lg results-card"
+            >
+              <div class="gradient-border"></div>
+              <v-card-title class="d-flex align-center pa-4">
+                <v-icon color="success" class="me-2">mdi-check-circle</v-icon>
+                <span class="text-h5">Veterinary Clinic Found</span>
+                <v-spacer></v-spacer>
+                <v-btn icon variant="text" @click="showResults = false">
+                  <v-icon>mdi-close</v-icon>
+                </v-btn>
+              </v-card-title>
+
+              <v-card-text class="pa-6">
+                <div class="clinic-details mb-6">
+                  <h3 class="text-h5 mb-4">{{ lookupData.clinicName }}</h3>
+                  <div class="detail-item">
+                    <v-icon class="me-2">mdi-map-marker</v-icon>
+                    {{ lookupData.address }}
+                  </div>
+                  <div class="detail-item">
+                    <v-icon class="me-2">mdi-phone</v-icon>
+                    {{ lookupData.phone }}
+                  </div>
+                  <div class="detail-item">
+                    <v-icon class="me-2">mdi-email</v-icon>
+                    {{ lookupData.email }}
+                  </div>
+                  <div class="detail-item">
+                    <v-icon class="me-2">mdi-clock</v-icon>
+                    {{ lookupData.hours }}
+                  </div>
+                  <div class="mt-4 pt-4 border-t">
+                    <small class="text-grey">Last scanned: {{ lookupData.lastScan }}</small>
+                  </div>
+                </div>
+
+                <!-- Google Maps Integration -->
+                <v-card class="map-container mb-4" elevation="1">
+                  <iframe
+                    width="100%"
+                    height="300"
+                    style="border:0"
+                    loading="lazy"
+                    allowfullscreen
+                    :src="`https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${encodeURIComponent(lookupData.address)}`"
+                  ></iframe>
+                </v-card>
+              </v-card-text>
+            </v-card>
+          </v-expand-transition>
+        </div>
       </v-container>
     </v-main>
   </v-app>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
+.min-height-screen {
+  min-height: 100vh;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+.position-absolute {
+  position: absolute;
 }
 
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+.search-button {
+  transition: all 0.3s ease;
+  font-size: 1.25rem;
 }
 
-/* Submit Button Visual Cue */
-.submit-button {
-  position: relative;
-  transition: background-color 0.3s ease;
-  min-width: 250px; /* Ensure minimum width */
+.search-text {
+  transition: transform 0.3s ease;
+  letter-spacing: 0.5px;
 }
 
-.button-text {
-  transition: opacity 0.3s ease;
-  margin-right: 24px; /* Add space for the arrow */
-}
-
-.submit-button:hover .button-text {
-  opacity: 0.8;
-}
-
-.submit-button:hover .arrow-icon {
-  transform: translateX(5px);
-}
-
-.arrow-icon {
+.search-icon {
   transition: transform 0.3s ease;
 }
 
-/* Help Section Animation */
-.help-section {
-  transition: max-height 0.5s ease, opacity 0.5s ease;
+.search-button:hover:not(:disabled) .search-icon {
+  transform: translateX(4px) scale(1.1);
+}
+
+.search-button:hover:not(:disabled) .search-text {
+  transform: translateX(-2px);
+}
+
+.help-button {
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.help-button:hover {
+  opacity: 1;
+}
+
+.gradient-border {
+  height: 4px;
+  background: linear-gradient(to right, #1867c0, #5cbbf6);
+}
+
+.search-input {
+  border-radius: 12px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  color: #424242;
+}
+
+.border-t {
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Optional: Add a subtle hover effect to the main card */
+.v-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.v-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+}
+
+.results-card {
+  animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gap-6 {
+  gap: 1.5rem;
+}
+
+.map-container {
+  border-radius: 12px;
   overflow: hidden;
 }
 </style>
